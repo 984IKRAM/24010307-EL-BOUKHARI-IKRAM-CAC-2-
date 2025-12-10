@@ -23,58 +23,35 @@ X (Features) : Variables d'entrée multi-types (Heures d'étude, Assiduité, Mot
 
 y (Target) : Variable Numérique Continue (le ExamScore ou la FinalGrade).
 
-#2. Le Code Python (Laboratoire) 
+#2. Le Code Python (Laboratoire)
+
 Ce script résume les étapes de votre Notebook Google Colab, utilisant les outils classiques de l'écosystème Python.
-# 1. IMPORTATION DES BIBLIOTHÈQUES
+1. IMPORTATION DES BIBLIOTHÈQUES
 import numpy as np
 import pandas as pd
-# ... autres imports de visualisation (matplotlib, seaborn)
+ ... autres imports de visualisation (matplotlib, seaborn)
 from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 
-# MODÈLE DE RÉGRESSION pour prédire un score continu
+MODÈLE DE RÉGRESSION pour prédire un score continu
 from sklearn.ensemble import RandomForestRegressor 
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # 2. CHARGEMENT ET SÉPARATION
-# Assumons que le fichier de données est 'student_data.csv'
-# df = pd.read_csv('student_data.csv') 
-# X = df.drop('ExamScore', axis=1) 
-# y = df['ExamScore'] 
+ Assumons que le fichier de données est 'student_data.csv'
+ df = pd.read_csv('student_data.csv') 
+#X = df.drop('ExamScore', axis=1) 
+ y = df['ExamScore'] 
 
-# X_train, X_test, y_train, y_test = train_test_split(
-#     X, y, test_size=0.2, random_state=42
-# )
-
-# 3. PRÉTRAITEMENT DES DONNÉES (Le plus important)
-
-# a. Définition des colonnes (à adapter aux noms exacts de votre jeu de données)
-numerical_features = ['StudyHours', 'Attendance', 'Age', 'Motivation', 'StressLevel']
-categorical_features = ['Gender', 'LearningStyle', 'Extracurricular', 'Internet']
-
-# b. Création du Préprocesseur (avec ColumnTransformer pour appliquer différents traitements)
-numerical_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='mean')), # Gestion des valeurs manquantes par la moyenne
-    ('scaler', StandardScaler()) # Normalisation des échelles (obligatoire pour de nombreux modèles)
-])
-
-categorical_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='most_frequent')), # Gestion des valeurs manquantes par la catégorie la plus fréquente
-    ('onehot', OneHotEncoder(handle_unknown='ignore')) # Encodage One-Hot pour convertir les catégories en colonnes numériques
-])
-
-preprocessor = ColumnTransformer(
-    transformers=[
-        ('num', numerical_transformer, numerical_features),
-        ('cat', categorical_transformer, categorical_features)
-    ],
-    remainder='passthrough'
+ X_train, X_test, y_train, y_test = train_test_split(
+     X, y, test_size=0.2, random_state=42
 )
 
-#3.Analyse Approfondie : Nettoyage (Data Wrangling)
+
+# 3.Analyse Approfondie : Nettoyage (Data Wrangling)
 Le Problème Mathématique du "Vide"
 Les données de performance étudiante et de comportement (StudyHours, Age, Motivation) sont des variables numériques essentielles pour les modèles de Régression.
 
@@ -89,7 +66,7 @@ L'Apprentissage (fit) : L'imputer scanne la colonne StudyHours exclusivement dan
 
 La Transformation (transform) : Il repasse sur les données. S'il voit un trou dans le Train Set, il injecte 10.5 heures. S'il voit un trou dans le Test Set, il injecte également 10.5 heures.
 
-#4. Analyse Approfondie : Exploration des Données (EDA)
+# 4. Analyse Approfondie : Exploration des Données (EDA)
  L'Exploration des Données (EDA) est la phase de "profilage" qui vous permet de comprendre la structure, la distribution, et les relations 
  au sein de votre jeu de données de performance étudiante avant de modéliser.Décrypter df.describe() (Analyse Univariée)L'examen de la sortie .
  describe() est crucial pour comprendre la distribution de vos variables clés (StudyHours, ExamScore, Motivation, etc.).Mean (Moyenne) vs 50% (Médiane) :Si Moyenne $\approx$ Médiane 
@@ -117,7 +94,7 @@ ExamScore de mi-session et ExamScore final (si les deux sont inclus comme featur
 
 Visualisation : On utilise une Heatmap de corrélation. Les carrés très foncés (proches de 1 ou -1) signalent un problème potentiel de redondance.
 
-#5. Analyse Approfondie : Méthodologie (Split)
+# 5. Analyse Approfondie : Méthodologie (Split)
 Vous indiquez que la séparation de votre jeu de données a donné le résultat suivant :
 
 Séparation effectuée :
@@ -134,7 +111,7 @@ la seule évaluation honnête de la capacité de votre modèle à prédire le sc
 
 La Sécurité : En fixant le random_state (vous avez probablement utilisé 42), vous assurez que ces 114 étudiants restent les mêmes à chaque exécution, garantissant la reproductibilité de vos résultats.
 
-#6. FOCUS THÉORIQUE : L'Algorithme Random Forest (Pour la Régression)
+# 6. FOCUS THÉORIQUE : L'Algorithme Random Forest (Pour la Régression)
 
 Pourquoi ce choix est pertinent (Le Consensus)
 Haute Robustesse : Le RandomForestRegressor est un ensemble de plusieurs arbres de décision, ce qui réduit la variance (le risque d'apprendre le bruit) par rapport à un arbre unique.
@@ -155,7 +132,7 @@ Chaque arbre prédit un score (ex: 78.5, 80.1, 77.9...).
 
 La prédiction finale est la Moyenne de tous les scores produits par les arbres de la forêt.
 
-#7. Analyse Approfondie : Évaluation (L'Heure de Vérité)
+# 7. Analyse Approfondie : Évaluation (L'Heure de Vérité)
 
 A. La Matrice de Confusion est INUTILE
 Dans l'Analyse Étudiante : Étant en Régression (prédiction d'un score), la Matrice de Confusion (TP, FN, FP, TN) n'a plus de sens.
