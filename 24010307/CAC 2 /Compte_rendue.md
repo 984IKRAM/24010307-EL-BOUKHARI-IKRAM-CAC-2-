@@ -1,4 +1,5 @@
-#📘 GRAND GUIDE : ANATOMIE D'UN PROJET DATA SCIENCE
+# 📘 GRAND GUIDE : ANATOMIE D'UN PROJET DATA SCIENCE
+
 ADAPTATION AU PROJET : Performance et Apprentissage Python
 Ce document décortique chaque étape du cycle de vie d'un projet de Machine Learning, transposé pour l'analyse des facteurs influençant la performance des étudiants.
 
