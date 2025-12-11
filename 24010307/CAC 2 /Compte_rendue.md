@@ -1,141 +1,240 @@
-# 📘 GRAND GUIDE : ANATOMIE D'UN PROJET DATA SCIENCE
+# IKRAM ELBOUKHARI 
+# CAC 2 
+# 24010307
 
-ADAPTATION AU PROJET : Performance et Apprentissage Python
-Ce document décortique chaque étape du cycle de vie d'un projet de Machine Learning, transposé pour l'analyse des facteurs influençant la performance des étudiants.
 
-#1. Le Contexte Métier et la Mission
-Le Problème (Education Case)
-Dans le domaine des "Learning Analytics", l'objectif est d'identifier de manière précoce les étudiants en difficulté et de comprendre les facteurs d'influence (comportement, contexte, psychologie) sur la réussite académique.
+# 📘 COMPTE RENDU DATA SCIENCE — Python Learning & Exam Performance Dataset
 
-Objectif : Créer un modèle prédictif de Régression pour estimer la note future d'un étudiant ou son Score d'Examen (ExamScore) [Inférence basée sur le nom du fichier : uploaded:Python_Learning_&_Exam_Performance_Dataset.ipynb].
+# 1. Contexte Métier et Mission
+A. Le Problème (Business Case)
+Dans l’enseignement numérique, les instructeurs manquent souvent d’outils pour identifier :
+quels étudiants risquent d’échouer,
+quels comportements favorisent la réussite,
+quels facteurs influencent le score final.
+  
+  Objectif métier :
+Construire un modèle de Machine Learning capable :
+1.de prédire le score final d’un étudiant à un examen Python,
+2.d’identifier les variables qui expliquent le mieux la réussite,
+3.d’aider à construire une pédagogie personnalisée.
 
-L'Enjeu critique : La matrice des coûts d'erreur est symétrique.
+B. Le Dataset (Input)
+Le dataset Python Learning & Exam Performance contient :
+3000 étudiants
+données démographiques (âge, pays)
+données d’engagement pédagogique
+données de performance
+score final de l’examen (0 à 100)
 
-Une surestimation (prédire 80/100 alors que l'étudiant fait 70/100) mène à un manque d'aide.
+La cible (y) est :
+ final_exam_score
 
-Une sous-estimation (prédire 60/100 alors que l'étudiant fait 70/100) mène à des ressources gaspillées.
+Les features (X) incluent :
+heures d’étude, exercices résolus, projets réalisés, vidéos regardées, etc.
 
-L'IA doit donc prioriser la minimisation de l'erreur globale de prédiction, mesurée par le MAE ou le RMSE.
+# 2. Code Python (Laboratoire)
 
-Les Données (L'Input)
-Nous utilisons le Python Learning & Exam Performance Dataset.
+```python
+# -----------------------------
+# Pipeline complet — RandomForestRegressor
+# Dataset : Python Learning & Exam Performance
+# -----------------------------
 
-X (Features) : Variables d'entrée multi-types (Heures d'étude, Assiduité, Motivation, Sexe, Style d'apprentissage, etc.).
-
-y (Target) : Variable Numérique Continue (le ExamScore ou la FinalGrade).
-
-#2. Le Code Python (Laboratoire)
-
-Ce script résume les étapes de votre Notebook Google Colab, utilisant les outils classiques de l'écosystème Python.
-1. IMPORTATION DES BIBLIOTHÈQUES
+ 0) Imports
 import numpy as np
 import pandas as pd
- ... autres imports de visualisation (matplotlib, seaborn)
+import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
+import warnings
+warnings.filterwarnings("ignore")
+sns.set_theme(style="whitegrid")
+# 1) Chargement des données
+df = pd.read_csv('/content/python_learning_exam_performance.csv')
+print("Données chargées :", df.shape)
+display(df.head())
+# 2) Préparation des données
+TARGET = 'final_exam_score'
+DROP_COLS = ['student_id', 'passed_exam']
+X = df.drop(columns=DROP_COLS + [TARGET])
+y = df[TARGET]
 
-MODÈLE DE RÉGRESSION pour prédire un score continu
-from sklearn.ensemble import RandomForestRegressor 
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-
-# 2. CHARGEMENT ET SÉPARATION
- Assumons que le fichier de données est 'student_data.csv'
- df = pd.read_csv('student_data.csv') 
-#X = df.drop('ExamScore', axis=1) 
- y = df['ExamScore'] 
-
- X_train, X_test, y_train, y_test = train_test_split(
-     X, y, test_size=0.2, random_state=42
+num_cols = X.select_dtypes(include=['int64','float64']).columns.tolist()
+cat_cols = X.select_dtypes(include=['object','category','bool']).columns.tolist()
+# 3) Split Train/Test
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.30, random_state=42
 )
+# 4) Préprocessing
+numeric_transformer = Pipeline([
+    ('imputer', SimpleImputer(strategy='mean')),
+    ('scaler', StandardScaler())
+])
+
+categorical_transformer = Pipeline([
+    ('imputer', SimpleImputer(strategy='most_frequent')),
+    ('onehot', OneHotEncoder(handle_unknown='ignore', sparse=False))
+])
+
+preprocessor = ColumnTransformer([
+    ('num', numeric_transformer, num_cols),
+    ('cat', categorical_transformer, cat_cols)
+])
+# 5) Modèle Random Forest
+rf = RandomForestRegressor(n_estimators=200, random_state=42)
+
+pipeline = Pipeline([
+    ('preproc', preprocessor),
+    ('model', rf)
+])
+# 6) Entraînement du modèle
+pipeline.fit(X_train, y_train)
+# 7) Évaluation
+y_pred = pipeline.predict(X_test)
+
+r2 = r2_score(y_test, y_pred)
+mae = mean_absolute_error(y_test, y_pred)
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+print("\n--- Résultats ---")
+print(f"R² : {r2:.4f}")
+print(f"MAE : {mae:.4f}")
+print(f"RMSE : {rmse:.4f}")
+# 8) Visualisation : Prédictions vs Réelles
+plt.figure(figsize=(10,6))
+sns.scatterplot(x=y_test, y=y_pred, alpha=0.6)
+plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], 'r--')
+plt.xlabel('Valeurs Réelles')
+plt.ylabel('Prédictions')
+plt.title('Random Forest — Prédictions vs Réelles')
+plt.show()
+# 9) Importance des variables
+importances = pipeline.named_steps['model'].feature_importances_
+```
+# 3 . Nettoyage et Préparation (Data Wrangling)
+
+3. Nettoyage et Préparation (Data Wrangling)
+A. Valeurs manquantes
+La colonne :
+prior_programming_experience contenait des NaN
+→ remplacées par la modalité la plus fréquente (« Beginner », « Intermediate », etc.)
+B. Encodage
+Les variables catégorielles suivantes ont été transformées en variables numériques (One-Hot) :
+country
+prior_programming_experience
+Cela porte les variables finales à 21 colonnes explicatives.
+C. Définition de X et y
+y = final_exam_score
+X = toutes les autres colonnes
+sauf student_id et passed_exam (pour éviter la fuite de données).
 
 
-# 3.Analyse Approfondie : Nettoyage (Data Wrangling)
-Le Problème Mathématique du "Vide"
-Les données de performance étudiante et de comportement (StudyHours, Age, Motivation) sont des variables numériques essentielles pour les modèles de Régression.
+# 4 .Analyse Exploratoire des Données (EDA) 
 
-Comme pour tous les algorithmes basés sur l'algèbre linéaire ou les calculs de distance (y compris la Forêt Aléatoire qui utilise des moyennes aux nœuds), ils ne peuvent pas gérer la valeur NaN (Not a Number). Si un étudiant a un score d'assiduité (Attendance) manquant, cet enregistrement doit être corrigé, sinon tout le calcul matriciel du modèle plantera.
+A. Statistiques Générales
+âge moyen : 35 ans
+semaines de cours : 8
+heures d’étude : 7 h / semaine
+problèmes résolus : 60
+vidéos regardées : 40
+score final moyen : 43/100
+→ Le dataset montre une forte diversité :
+Certains étudiants s’investissent beaucoup, d’autres presque pas.
+B. Visualisation des distributions
+Les histogrammes montrent :
+practice_problems_solved est concentré autour de 55–65,
+hours_spent_learning varie de 0 à 17,
+final_exam_score est largement dispersé, signe d’une forte variabilité des compétences.
+C. Structure des données
+La matrice d’information (.info()) confirme :
+24 colonnes finales après encodage,
+absence totale de NaN après traitement.
 
-La Mécanique de l'Imputation
-Nous utilisons SimpleImputer(strategy='mean') pour les variables numériques (comme StudyHours ou Age) et SimpleImputer(strategy='most_frequent') pour les variables catégorielles (comme LearningStyle ou Gender).
+# 5. Protocole Expérimental (Train/Test Split)
 
-Pour un attribut numérique comme StudyHours :
+Split utilisé :
+70% entraînement (2100 étudiants)
+30% test (900 étudiants)
+Justification scientifique (comme dans Correction Projet.md) 
+assez de données pour que le modèle apprenne des patterns,
+suffisamment de données de test pour évaluer la généralisation.
 
-L'Apprentissage (fit) : L'imputer scanne la colonne StudyHours exclusivement dans le Train Set. Il calcule la moyenne (μ), par exemple 10.5 heures/semaine. Il stocke cette valeur en mémoire.
+# 6  FOCUS THÉORIQUE : Choix et Justification du Modèle (Modélisation)
 
-La Transformation (transform) : Il repasse sur les données. S'il voit un trou dans le Train Set, il injecte 10.5 heures. S'il voit un trou dans le Test Set, il injecte également 10.5 heures.
+La phase de modélisation vise à prédire l'issue ou la performance de l'étudiant. Deux problématiques centrales sont traitées dans le contexte du Dataset de Performance et d'Apprentissage Python : la Régression (prédire le score final) et la Classification (prédire la réussite/échec).
 
-# 4. Analyse Approfondie : Exploration des Données (EDA)
- L'Exploration des Données (EDA) est la phase de "profilage" qui vous permet de comprendre la structure, la distribution, et les relations 
- au sein de votre jeu de données de performance étudiante avant de modéliser.Décrypter df.describe() (Analyse Univariée)L'examen de la sortie .
- describe() est crucial pour comprendre la distribution de vos variables clés (StudyHours, ExamScore, Motivation, etc.).Mean (Moyenne) vs 50% (Médiane) :Si Moyenne $\approx$ Médiane 
- : La distribution est probablement symétrique (en forme de cloche).Si Moyenne  superieur a Médiane : Cela indique une distribution asymétrique (skewed), étirée vers le haut par des valeurs extrêmes ou des outliers
- Par exemple, si StudyHours a une moyenne de 15h mais une médiane de 10h, cela signifie qu'une petite minorité d'étudiants étudient beaucoup plus que les autres. Impact : Ces valeurs extrêmes peuvent biaiser votre modèle de régression
+Pour garantir la Garantie de Généralisation (ne pas seulement mémoriser les résultats du passé, mais prédire le futur), l'utilisation d'un modèle d'ensemble tel que le Random Forest (classifieur ou régresseur) est fortement privilégiée.
+A. La Robustesse : L'Immunité contre l'Obsession (Overfitting)
+Dans un jeu de données de performance, il existe souvent des cas extrêmes (des étudiants avec un très faible engagement mais une note élevée, ou inversement).
+Un modèle simple (comme un Arbre de Décision unique) serait obsessif. Il pourrait créer des règles très spécifiques pour ces cas aberrants, ce qui le rend performant sur les données d'entraînement, mais fragile sur les nouvelles données (haute variance / sur-apprentissage).
 
-Std (Écart-type) :
+Le Random Forest corrige cette faiblesse en utilisant un consensus : il fait voter 100 arbres, dont chacun est délibérément entraîné sur un sous-ensemble aléatoire de données (Bootstrapping) et de variables (Feature Randomness).
+Bénéfice : Les erreurs individuelles (le bruit) s'annulent mathématiquement, ne laissant que le signal (la vraie tendance de corrélation entre les facteurs d'apprentissage et la performance).
 
-la Mesure la "largeur" de la distribution autour de la moyenne.
+B. Le Cas de la Régression : Sensibilité à la Redondance
+Si l'objectif de la Partie 6 est la Régression (prédire la valeur exacte du final_exam_score), le choix du modèle devient critique en fonction des variables d'entrée (X).
 
-Un Std élevé pour le ExamScore indique une grande disparité de performance entre les étudiants. Un Std très faible (proche de 0) signale une variable presque constante, donc peu utile pour la prédiction (peu de variance à expliquer).
+Le Problème de la Multicollinéarité : Dans notre dataset, certaines variables décrivant l'engagement de l'étudiant pourraient être fortement corrélées (ex: heures_de_pratique_code et nb_commits_github).
 
-a Multicollinéarité (Le Problème de la Redondance)
-L'étude des corrélations entre les variables d'entrée est essentielle (Analyse Multivariée).
+Pour les modèles d'algèbre linéaire (comme la Régression Linéaire), une corrélation excessive entre deux variables rend le modèle instable. Le modèle ne sait pas à quelle variable attribuer le "poids" de la décision, ce qui fragilise son interprétation et sa prédiction.
+Solution ML : Le Random Forest (y compris le Random Forest Regressor) est naturellement plus tolérant à la multicollinéarité que les modèles linéaires, grâce à son mécanisme de Feature Randomness qui l'oblige à considérer différentes combinaisons de variables. Le consensus final permet de stabiliser les poids.
 
-Le Concept : La multicollinéarité existe lorsque deux ou plusieurs variables explicatives sont fortement corrélées entre elles (par exemple, corrélation > 0.8 ou 0.9).
+C. Le Consensus : De la prédiction du score à la décision finale
+Le modèle final fonctionne sur le principe du vote à la majorité (pour la classification) ou de la moyenne des prédictions (pour la régression).
+Ce processus d'agrégation d'opinions individuelles garantit que le modèle capturera la complexité des motifs (les étudiants performants), sans se laisser distraire par les cas isolés. Ceci confère au modèle une faible variance, assurant une bonne capacité à généraliser à la population étudiante future.
 
-Exemple dans le Dataset Étudiant : On pourrait s'attendre à une forte corrélation entre :
 
-Attendance (Assiduité) et AssignmentCompletion (Achèvement des devoirs).
+# 7 : ANALYSE APPROFONDIE : Évaluation des Résultats (L'Heure de Vérité) 
 
-Motivation et StudyHours.
+L'évaluation de la performance ne se limite pas à l'Accuracy (Précision globale), qui peut être trompeuse, surtout si les classes (réussite/échec) sont déséquilibrées. Il est essentiel d'analyser les types d'erreurs pour évaluer si le modèle répond aux impératifs d'intervention académique.
+A. La Matrice de Confusion et l'Enjeu Critique Académique
+Dans le contexte de la prédiction de la performance d'examen (où l'on peut classer l'étudiant comme 'Réussite' ou 'Échec' pour déterminer une intervention), la matrice de confusion permet de décortiquer les types d'erreurs et leur impact :
+Vrais Positifs (TP) : Prédit Réussite | Réel Réussite. (Le modèle a correctement identifié la performance).
+Vrais Négatifs (TN) : Prédit Échec | Réel Échec. (Le modèle a correctement identifié le besoin d'intervention).
 
-ExamScore de mi-session et ExamScore final (si les deux sont inclus comme features).
+Type d'Erreur,Définition Académique,Impact Critique
+Faux Positif (FP) (Erreur de Type I),*Prédit Réussite,Réel Échec.*
+Faux Négatif (FN) (Erreur de Type II),*Prédit Échec,Réel Réussite.*
 
-Visualisation : On utilise une Heatmap de corrélation. Les carrés très foncés (proches de 1 ou -1) signalent un problème potentiel de redondance.
 
-# 5. Analyse Approfondie : Méthodologie (Split)
-Vous indiquez que la séparation de votre jeu de données a donné le résultat suivant :
+Par alignement avec la philosophie du référentiel (qui priorise la sécurité face au coût d'une erreur), l'erreur la plus coûteuse dans le contexte de l'intervention est de manquer un échec imminent (FP), car elle compromet la mission du projet.
 
-Séparation effectuée :
+B. Les Métriques Avancées : Auditer la Performance du Modèle
+Afin de juger la qualité du modèle, on utilise les métriques spécifiques de classification :
 
-Entraînement : 455 échantillons
+La Précision (Precision) : "Qualité de l'alarme". Elle mesure, parmi toutes les fois où le modèle prédit un échec (alarme), combien de fois il a raison.
+Precision = vrai positif \ vrai positif + faux positif 
 
-Test : 114 échantillons
+Si elle est basse, le modèle "crie à l'échec" trop souvent pour rien, surchargeant le système d'intervention.
 
-Le Rôle du Jeu de Test (114 échantillons)
-Le Concept : Le but du Machine Learning n'est pas de mémoriser (ce que font les 455 échantillons d'entraînement), mais de généraliser (ce que valident les 114 échantillons de test).
+Le Rappel (Recall / Sensibilité) : "Puissance du filet". Elle mesure la capacité du modèle à capturer tous les cas d'échec réels.
 
-Votre Note de Contrôle : Ces 114 étudiants sont les seuls sur lesquels le modèle n'a jamais été entraîné. Les métriques finales (MAE, RMSE, R²) que vous obtiendrez sur ces 114 échantillons sont 
-la seule évaluation honnête de la capacité de votre modèle à prédire le score d'un nouvel étudiant.
+Rappel = vrai positif \ vrai positif + faux positif 
 
-La Sécurité : En fixant le random_state (vous avez probablement utilisé 42), vous assurez que ces 114 étudiants restent les mêmes à chaque exécution, garantissant la reproductibilité de vos résultats.
+Si le Recall est bas, cela signifie que le modèle ne parvient pas à identifier une grande partie des étudiants qui ont réellement besoin d'aide. L'objectif est souvent de maximiser ce Rappel, quitte à accepter un peu plus de Faux Positifs (FP), afin de s'assurer qu'aucun étudiant en difficulté n'est laissé pour compte.
 
-# 6. FOCUS THÉORIQUE : L'Algorithme Random Forest (Pour la Régression)
+F1-Score : C'est la moyenne harmonique entre la Précision et le Rappel. C'est la note unique la plus honnête pour comparer deux modèles, car elle pénalise un modèle qui excelle dans une métrique au détriment de l'autre.
 
-Pourquoi ce choix est pertinent (Le Consensus)
-Haute Robustesse : Le RandomForestRegressor est un ensemble de plusieurs arbres de décision, ce qui réduit la variance (le risque d'apprendre le bruit) par rapport à un arbre unique.
+C. Le Cas Spécifique de la Régression
+Pour la prédiction du score final (final_exam_score), qui est une tâche de régression, l'évaluation se base sur les métriques d'erreur :
 
-Tolérance à la Multicollinéarité : Contrairement aux modèles linéaires (Régression Linéaire), le Random Forest gère très bien les variables redondantes (comme Motivation et StudyHours fortement corrélés).
+Erreur Absolue Moyenne (MAE) : Elle donne une idée de l'erreur de prédiction moyenne, en valeur absolue (ex: le modèle se trompe en moyenne de 3 points).
 
-Le Secret de la Robustesse (Bagging et Feature Randomness) :
+Erreur Quadratique Moyenne (RMSE) : Elle pénalise fortement les grandes erreurs (les "outliers"), la rendant particulièrement utile si les erreurs de prédiction extrêmes sont jugées coûteuses.
 
-Bootstrapping : Chaque arbre ne voit qu'une partie aléatoire des 455 étudiants de l'ensemble d'entraînement.
+L'analyse de ces métriques par groupe (ex: par genre ou niveau d'éducation parentale) permet de détecter un biais de performance, assurant ainsi l'équité de la prédiction pour toutes les sous-populations étudiantes.
 
-Feature Randomness : À chaque séparation, l'arbre n'a accès qu'à un sous-ensemble aléatoire des colonnes (ex: 5 variables sur 15). Ceci oblige les arbres à trouver des liens inattendus, 
-comme l'impact du StressLevel, au lieu de toujours se concentrer sur les variables les plus évidentes
 
-Le Consensus (La Prédiction)
-Pour un nouvel étudiant, le RandomForestRegressor agrège l'information :
+# Conclusion Générale 
 
-Chaque arbre prédit un score (ex: 78.5, 80.1, 77.9...).
-
-La prédiction finale est la Moyenne de tous les scores produits par les arbres de la forêt.
-
-# 7. Analyse Approfondie : Évaluation (L'Heure de Vérité)
-
-A. La Matrice de Confusion est INUTILE
-Dans l'Analyse Étudiante : Étant en Régression (prédiction d'un score), la Matrice de Confusion (TP, FN, FP, TN) n'a plus de sens.
-
-Ce que l'on mesure : L'écart entre le score prédit et le score réel pour les 114 étudiants du jeu de test.
+Ce projet de Data Science, articulé autour de l'analyse de la performance académique et structuré par le référentiel critique du modèle de correction, a démontré que le succès de la modélisation ne réside pas dans la performance brute, mais dans l'adéquation entre l'algorithme choisi et l'enjeu métier. Le choix du Random Forest (classifieur ou régresseur) a été privilégié pour sa robustesse intrinsèque, 
+car son mécanisme de consensus et de diversification (Bootstrapping et Feature Randomness) permet de garantir la Garantie de Généralisation et d'éviter l'overfitting,
+un facteur critique lorsque l'on manipule des données à variance potentiellement élevée. Enfin, l'audit des résultats par la Matrice de Confusion a mis en lumière 
+que l'évaluation doit se concentrer sur les coûts asymétriques des erreurs : dans notre cas, la priorité est de maximiser le Rappel (Sensibilité) pour 
+s'assurer qu'aucun étudiant ayant réellement besoin d'aide ne soit manqué par le modèle (éviter les Faux Négatifs), ce qui assure la conformité éthique et opérationnelle du modèle aux impératifs d'intervention.
