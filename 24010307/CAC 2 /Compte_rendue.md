@@ -1,8 +1,8 @@
 # IKRAM ELBOUKHARI 
 # CAC 2 
 # 24010307
-
-
+ <img src="https://drive.google.com/uc?export=view&id=170X1bm7T5q7bqRZgc0OwI261t6dFckUr" style="height:464px;margin-right:432px"/>
+ 
 # 📘 COMPTE RENDU DATA SCIENCE — Python Learning & Exam Performance Dataset
 
 # 1. Contexte Métier et Mission
